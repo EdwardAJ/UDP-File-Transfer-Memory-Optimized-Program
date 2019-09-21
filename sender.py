@@ -1,7 +1,8 @@
 import socket
-
-UDP_IP = "127.0.0.1"
-UDP_PORT = 8080
+from constants import *
+# DATA_MAX_SIZE = 5
+# UDP_IP = "127.0.0.1"
+# UDP_PORT = 8080
 MESSAGE = "Hello World!"
 
 package_types = [
@@ -18,13 +19,13 @@ def generate_packet():
     length = bytearray(2)
     checksum = bytearray(2) 
 
-    data = bytearray(5)
+    data = bytearray(DATA_MAX_SIZE)
     data[0] = 72
     data[1] = 69
     data[2] = 72
     data[3] = 69
 
-    packet = bytearray(7 + 5)
+    packet = bytearray(7 + DATA_MAX_SIZE-1)
     packet[0] = type_id_int
     packet[1] = sequence_number[0]
     packet[2] = sequence_number[1]
@@ -33,9 +34,9 @@ def generate_packet():
     packet[5] = checksum[0]
     packet[6] = checksum[1]
     
-    for i in range(0, 5):
-        packet[7+ i] = data[i]
-    
+    for i in range(0, DATA_MAX_SIZE-1):
+        packet[7 + i] = data[i]
+    print (type_id_int)
     return packet
 
 udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
