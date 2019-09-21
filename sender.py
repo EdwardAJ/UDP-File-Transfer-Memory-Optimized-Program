@@ -17,12 +17,12 @@ def generate_packet(packet_type, id, sequence, length, data):
     packet[0] = type_id
 
     #Sequence
-    packet[1] = (sequence >> 4) & 15
-    packet[2] = sequence & 15
+    packet[1] = (sequence >> 3)
+    packet[2] = sequence
 
     #Length
-    packet[3] = (length >> 4) & 15
-    packet[4] = length & 15
+    packet[3] = (length >> 3)
+    packet[4] = length
     
     #Data
     for i in range(0, DATA_MAX_SIZE - 1 + 1):
@@ -40,11 +40,11 @@ def generate_checksum(packet):
     pepega = bytearray(DATA_MAX_SIZE + 5 + ((DATA_MAX_SIZE + 5) % 2))
     for i in range(0, 4 + 1):
         pepega[i] = packet[i]
-    for i in range(0, DATA_MAX_SIZE - 1 + 1):
+    for i in range(0, DATA_MAX_SIZE):
         pepega[5 + i] = packet[7 + i]
 
     checksum = bytearray(2)
-    for i in range(0, int(len(pepega)/2) - 1 + 1):
+    for i in range(0, int(len(pepega)/2)):
         checksum[0] = checksum[0] ^ pepega[i * 2]
         checksum[1] = checksum[1] ^ pepega[i * 2 + 1]
     
@@ -54,7 +54,6 @@ def split_file (filename, id):
     packets = []
     with open (filename, 'rb') as fin:
         buf = fin.read(DATA_MAX_SIZE)
-        i = 0
         while (buf):
             print(len(buf))
             data = bytearray(DATA_MAX_SIZE)
