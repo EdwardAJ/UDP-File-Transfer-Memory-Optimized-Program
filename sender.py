@@ -18,13 +18,13 @@ def generate_packet():
     length = bytearray(2)
     checksum = bytearray(2) 
 
-    data = bytearray(5)
+    data = bytearray(35536)
     data[0] = 72
     data[1] = 69
     data[2] = 72
     data[3] = 69
 
-    packet = bytearray(7 + 5)
+    packet = bytearray(7 + len(data))
     packet[0] = type_id_int
     packet[1] = sequence_number[0]
     packet[2] = sequence_number[1]
@@ -33,7 +33,7 @@ def generate_packet():
     packet[5] = checksum[0]
     packet[6] = checksum[1]
     
-    for i in range(0, 5):
+    for i in range(0, len(data)-1):
         packet[7+ i] = data[i]
     
     return packet
