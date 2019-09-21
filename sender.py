@@ -10,19 +10,19 @@ packet_types = [
 
 def generate_packet(packet_type, id, sequence, length, data):
     type_id = (packet_type << 4) + id
-
     packet = bytearray(7 + DATA_MAX_SIZE)
 
     #Type and ID
     packet[0] = type_id
+    print('type: ', packet[0])
 
     #Sequence
-    packet[1] = (sequence >> 3)
-    packet[2] = sequence
+    packet[1] = (sequence >> 8) & 255
+    packet[2] = sequence & 255
 
     #Length
-    packet[3] = (length >> 3)
-    packet[4] = length
+    packet[3] = (length >> 8) & 255
+    packet[4] = length & 255
     
     #Data
     for i in range(0, DATA_MAX_SIZE - 1 + 1):
@@ -30,7 +30,7 @@ def generate_packet(packet_type, id, sequence, length, data):
 
     #Checksum
     checksum = generate_checksum(packet)
-    print(checksum)
+    # print(checksum)
     packet[5] = checksum[0]
     packet[6] = checksum[1]
 
@@ -52,28 +52,26 @@ def generate_checksum(packet):
 
 def split_file (filename, id):
     packets = []
+    i = 0
     with open (filename, 'rb') as fin:
         buf = fin.read(DATA_MAX_SIZE)
         while (buf):
-            print(len(buf))
+            # print(len(buf))
             data = bytearray(DATA_MAX_SIZE)
 
             for j in range(0, len(buf) - 1 + 1):
                 data[j] = buf[j]
             
-            packets.append(generate_packet(packet_types[0], id, i, len(buf), data))
+            packets.append(generate_packet(packet_types[1], id, i, len(buf), data))
             buf = fin.read(DATA_MAX_SIZE)
             i += 1
 
-        print ('COUNT: ', i)
+        # print ('COUNT: ', i)
     return packets
 
-aas = split_file('edward 3x4 hitam putih.jpg', 1)
-for aa in aas:
-    print(aa[0:8])
-
-# udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-# data = bytearray(DATA_MAX_SIZE)
-# data[0] = 72
-# data[1] = 69
-# udp_socket.sendto(generate_packet(packet_types[0], 0, 0, 4, data), (UDP_IP, UDP_PORT))
+aas = split_file('edward 3x4 hitam putih.jpg', 3)
+udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+udp_socket.sendto(aas[0], (UDP_IP, UDP_PORT))
+# for aa inprint(packet_read[0]) aas:
+#     udp_socket.sendto(aa[0:8], (UDP_IP, UDP_PORT))
+#     print(aa[0:8])
