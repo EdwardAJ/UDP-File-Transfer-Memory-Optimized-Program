@@ -1,4 +1,5 @@
 import socket
+from packet import *
 from constants import *
 
 udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -18,7 +19,18 @@ def write_file(data):
         num_bytes_written = binary_file.write(data)
         print("Wrote %d bytes." % num_bytes_written)
 
-while True:
-    data, addr = udp_socket.recvfrom(DATA_MAX_SIZE + 7)
-    write_file(read_packet(data))
-    print ("Received: ", read_packet(data))
+def receiver():
+    i = 0
+    while True:
+        packet, addr = udp_socket.recvfrom(DATA_MAX_SIZE + 7)
+        if (is_checksum_valid(packet)):
+            i += 1
+            if (is_fin(packet)):
+                create_fin_ack(packet)
+                #send_packet(create_fin_ack(packet))
+            else:
+                create_ack(packet)
+                #send_packet(create_ack(packet))
+        print ("Received: ", i)
+
+receiver()
