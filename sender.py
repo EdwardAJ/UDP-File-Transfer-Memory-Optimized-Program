@@ -17,12 +17,12 @@ def generate_packet(packet_type, id, sequence, length, data):
     packet[0] = type_id
 
     #Sequence
-    packet[1] = (sequence >> 3) & 15
-    packet[2] = sequence & 15
+    packet[1] = (sequence >> 3)
+    packet[2] = sequence
 
     #Length
-    packet[3] = (length >> 3) & 15
-    packet[4] = length & 15
+    packet[3] = (length >> 3)
+    packet[4] = length
     
     #Data
     for i in range(0, DATA_MAX_SIZE - 1 + 1):
@@ -53,11 +53,8 @@ def generate_checksum(packet):
 def split_file (filename):
     with open (filename, 'rb') as fin:
         buf = fin.read(DATA_MAX_SIZE)
-        i = 0
         while (buf):
-            print(buf)
             buf = fin.read(DATA_MAX_SIZE)
-            i = i + 1
 
 split_file('edward 3x4 hitam putih.jpg')
 # udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
