@@ -33,7 +33,6 @@ def create_merged_file (id):
     print('complete_path: ', complete_path)
     complete_name = complete_path + '/merged'
     print(complete_name)
-    
     file_list_array = get_file_list(id)
     write_file(b'\x00', complete_name)
     file_list_array.sort()
@@ -78,12 +77,12 @@ def receiver():
         print ("Received: ", i)
 
 
-# while True:
-#     data, addr = udp_socket.recvfrom(DATA_MAX_SIZE + 7)
-#     # Get packet id
-#     packet_read = read_packet_data(data)
-#     write_directory(packet_read, 2)
-create_merged_file(2)
+while True:
+    data, addr = udp_socket.recvfrom(DATA_MAX_SIZE + 7)
+    # Get packet id
+    packet_read = read_packet_data(data)
+    write_directory(packet_read, get_packet_id(data))
+# create_merged_file(2)
 # receiver()
 # get_file_list(2)
 
