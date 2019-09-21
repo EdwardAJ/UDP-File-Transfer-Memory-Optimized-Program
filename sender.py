@@ -1,9 +1,5 @@
 import socket
 from constants import *
-# DATA_MAX_SIZE = 5
-# UDP_IP = "127.0.0.1"
-# UDP_PORT = 8080
-MESSAGE = "Hello World!"
 
 package_types = [
     0, #DATA
