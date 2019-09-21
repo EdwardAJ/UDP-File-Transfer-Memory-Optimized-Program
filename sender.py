@@ -38,29 +38,20 @@ class MyThread():
 
     def run(self,idFile,filename):
         threadLock.acquire()
-        split_file(filename,idFile)
+        packets = split_file(filename,idFile)
+        for packet in packets:
+            print('Sending...')
+            send_packet(packet, UDP_IP, UDP_PORT)
         # test print nomor thread
         print(file_number+1)
         threadLock.release()
 
 threadLock = threading.Lock()
 
-# bacain nama-nama filenya dulu
-list_of_filename = []
-while (len(list_of_filename) < 5):
-    input_name = input()
-    if (input_name == ''):
-        break
-    list_of_filename.append(input_name)
-
-# main program, jalanin multithreading
 file_number = 0
-while(file_number < len(list_of_filename)):
-    # globals()['thread%s' % file_number] --->>> adalah nama variabel, jadi thread1 thread2 dst
-    globals()['thread%s' % (file_number+1)] = MyThread(file_number, "Thread-"+str(file_number+1), file_number)
-    globals()['thread%s' % (file_number+1)].run(file_number,list_of_filename[file_number])
-    file_number += 1
-
-# data = bytearray(DATA_MAX_SIZE)
-# data[0] = 72
-# data[1] = 69 
+while True:
+    input_name = input()
+    if (input_name != ''):
+        globals()['thread%s' % (file_number+1)] = MyThread(file_number, "Thread-"+str(file_number+1), file_number)
+        globals()['thread%s' % (file_number+1)].run(file_number,input_name)
+        file_number += 1
