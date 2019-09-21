@@ -21,7 +21,7 @@ def read_file (filename):
 
 def get_file_list (id):
     my_path = os.path.abspath(os.path.dirname(__file__))
-    complete_path = my_path + '/'+ str(id)
+    complete_path = os.path.join(my_path, str(id))
     onlyfiles = [f for f in listdir(complete_path) if isfile(join(complete_path, f))]
     print(onlyfiles)
     return onlyfiles
@@ -29,9 +29,9 @@ def get_file_list (id):
 
 def create_merged_file (id):
     my_path = os.path.abspath(os.path.dirname(__file__))
-    complete_path = my_path + '/'+ str(id)
+    complete_path = os.path.join(my_path, str(id))
     print('complete_path: ', complete_path)
-    complete_name = complete_path + '/merged'
+    complete_name = os.path.join(complete_path, 'merged')
     print(complete_name)
     
     file_list_array = get_file_list(id)
@@ -40,7 +40,7 @@ def create_merged_file (id):
     print(file_list_array)
     f = open(complete_name, "wb")
     for file_name in file_list_array:
-        buf = read_file(complete_path + '/' + file_name)
+        buf = read_file(os.path.join(complete_path, file_name))
         f.write(buf)
         f.seek(0,2)
 
@@ -55,7 +55,7 @@ def write_directory (data, id):
     # Check if directory exists
     if (not os.path.exists(str(id))):
         os.mkdir(str(id))
-    complete_path = my_path + '/'+ str(id)
+    complete_path = os.path.join(my_path, str(id))
     file_name_int = 1
     complete_name = os.path.join(complete_path, str(file_name_int))
     while os.path.exists(complete_name):
@@ -78,12 +78,12 @@ def receiver():
         print ("Received: ", i)
 
 
-# while True:
-#     data, addr = udp_socket.recvfrom(DATA_MAX_SIZE + 7)
-#     # Get packet id
-#     packet_read = read_packet_data(data)
-#     write_directory(packet_read, 2)
-create_merged_file(2)
+while True:
+    data, addr = udp_socket.recvfrom(DATA_MAX_SIZE + 7)
+    # Get packet id
+    packet_read = read_packet_data(data)
+    write_directory(packet_read, 2)
+# create_merged_file(2)
 # receiver()
 # get_file_list(2)
 
