@@ -1,4 +1,5 @@
 import socket
+import threading
 from constants import *
 
 packet_types = [
@@ -7,6 +8,8 @@ packet_types = [
     2, #FIN
     3, #FIN-ACK
 ]
+
+threads = []
 
 def generate_packet(packet_type, id, sequence, length, data):
     type_id = (packet_type << 4) + id
@@ -17,12 +20,12 @@ def generate_packet(packet_type, id, sequence, length, data):
     packet[0] = type_id
 
     #Sequence
-    packet[1] = (sequence >> 3)
-    packet[2] = sequence
+    packet[1] = (sequence >> 8) & 255
+    packet[2] = sequence & 255
 
     #Length
-    packet[3] = (length >> 3)
-    packet[4] = length
+    packet[3] = (length >> 8) & 255
+    packet[4] = length & 255
     
     #Data
     for i in range(0, DATA_MAX_SIZE - 1 + 1):
@@ -54,6 +57,7 @@ def split_file (filename, id):
     packets = []
     with open (filename, 'rb') as fin:
         buf = fin.read(DATA_MAX_SIZE)
+        i = 0
         while (buf):
             print(len(buf))
             data = bytearray(DATA_MAX_SIZE)
@@ -68,9 +72,39 @@ def split_file (filename, id):
         print ('COUNT: ', i)
     return packets
 
-aas = split_file('edward 3x4 hitam putih.jpg', 1)
-for aa in aas:
-    print(aa[0:8])
+# aas = split_file('edward 3x4 hitam putih.jpg', 1)
+# for aa in aas:
+#     print(aa[0:8])
+
+class MyThread():
+    def __init__(self, threadID, name, counter):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+        self.counter = counter
+
+    def run(self,idFile,filename):
+        threadLock.acquire()
+        split_file(filename,idFile)
+        print(file_number+1)
+        threadLock.release()
+
+threadLock = threading.Lock()
+
+list_of_filename = []
+while (len(list_of_filename) < 4):
+    input_name = input()
+    if (input_name == ''):
+        break
+    list_of_filename.append(input_name)
+
+file_number = 0
+while(file_number < len(list_of_filename)):
+    # globals()['thread%s' % file_number] adalah nama variabel, jadi thread1 thread2 dst
+    globals()['thread%s' % (file_number+1)] = MyThread(file_number, "Thread-"+str(file_number+1), file_number)
+    globals()['thread%s' % (file_number+1)].run(file_number,list_of_filename[file_number])
+    globals()['thread%s' % (file_number+1)].join()
+    file_number += 1
 
 # udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 # data = bytearray(DATA_MAX_SIZE)
