@@ -9,8 +9,6 @@ packet_types = [
     3, #FIN-ACK
 ]
 
-threads = []
-
 def generate_packet(packet_type, id, sequence, length, data):
     type_id = (packet_type << 4) + id
 
@@ -77,6 +75,7 @@ def split_file (filename, id):
 #     print(aa[0:8])
 
 class MyThread():
+    # ini copas dari https://www.tutorialspoint.com/python/python_multithreading.htm
     def __init__(self, threadID, name, counter):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -91,6 +90,7 @@ class MyThread():
 
 threadLock = threading.Lock()
 
+# bacain nama-nama filenya dulu
 list_of_filename = []
 while (len(list_of_filename) < 4):
     input_name = input()
@@ -98,9 +98,10 @@ while (len(list_of_filename) < 4):
         break
     list_of_filename.append(input_name)
 
+# main program, jalanin multithreading
 file_number = 0
 while(file_number < len(list_of_filename)):
-    # globals()['thread%s' % file_number] adalah nama variabel, jadi thread1 thread2 dst
+    # globals()['thread%s' % file_number] --->>> adalah nama variabel, jadi thread1 thread2 dst
     globals()['thread%s' % (file_number+1)] = MyThread(file_number, "Thread-"+str(file_number+1), file_number)
     globals()['thread%s' % (file_number+1)].run(file_number,list_of_filename[file_number])
     globals()['thread%s' % (file_number+1)].join()
