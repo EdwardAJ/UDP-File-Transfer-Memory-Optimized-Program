@@ -50,10 +50,19 @@ def generate_checksum(packet):
     
     return checksum
 
-udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+def split_file (filename):
+    with open (filename, 'rb') as fin:
+        buf = fin.read(DATA_MAX_SIZE)
+        i = 0
+        while (buf):
+            print(buf)
+            buf = fin.read(DATA_MAX_SIZE)
+            i = i + 1
+        print ('COUNT: ', i)
 
+# split_file('edward 3x4 hitam putih.jpg')
+udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 data = bytearray(DATA_MAX_SIZE)
 data[0] = 72
 data[1] = 69
-
 udp_socket.sendto(generate_packet(packet_types[0], 0, 0, 4, data), (UDP_IP, UDP_PORT))
