@@ -39,6 +39,7 @@ class MyThread():
     def run(self,idFile,filename):
         threadLock.acquire()
         split_file(filename,idFile)
+        # test print nomor thread
         print(file_number+1)
         threadLock.release()
 
@@ -46,7 +47,7 @@ threadLock = threading.Lock()
 
 # bacain nama-nama filenya dulu
 list_of_filename = []
-while (len(list_of_filename) < 4):
+while (len(list_of_filename) < 5):
     input_name = input()
     if (input_name == ''):
         break
