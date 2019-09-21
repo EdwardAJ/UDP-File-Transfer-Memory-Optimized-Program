@@ -5,6 +5,7 @@ from constants import *
 
 def split_file (filename, id):
     packets = []
+    i = 0
     with open (filename, 'rb') as fin:
         i = 0
         buf = fin.read(DATA_MAX_SIZE)
@@ -16,7 +17,7 @@ def split_file (filename, id):
             for j in range(0, len(buf) - 1 + 1):
                 data[j] = buf[j]
             
-            packets.append(generate_packet(packet_types[0], id, i, len(buf), data))
+            packets.append(generate_packet(packet_types[1], id, i, len(buf), data))
             buf = fin.read(DATA_MAX_SIZE)
             i += 1
 
