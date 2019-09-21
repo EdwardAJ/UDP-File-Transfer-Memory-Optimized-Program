@@ -50,19 +50,31 @@ def generate_checksum(packet):
     
     return checksum
 
-def split_file (filename):
+def split_file (filename, id):
+    packets = []
     with open (filename, 'rb') as fin:
         buf = fin.read(DATA_MAX_SIZE)
         i = 0
         while (buf):
-            print(buf)
-            buf = fin.read(DATA_MAX_SIZE)
-            i = i + 1
-        print ('COUNT: ', i)
+            print(len(buf))
+            data = bytearray(DATA_MAX_SIZE)
 
-# split_file('edward 3x4 hitam putih.jpg')
-udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-data = bytearray(DATA_MAX_SIZE)
-data[0] = 72
-data[1] = 69
-udp_socket.sendto(generate_packet(packet_types[0], 0, 0, 4, data), (UDP_IP, UDP_PORT))
+            for j in range(0, len(buf) - 1 + 1):
+                data[j] = buf[j]
+            
+            packets.append(generate_packet(packet_types[0], id, i, len(buf), data))
+            buf = fin.read(DATA_MAX_SIZE)
+            i += 1
+
+        print ('COUNT: ', i)
+    return packets
+
+aas = split_file('edward 3x4 hitam putih.jpg', 1)
+for aa in aas:
+    print(aa[0:8])
+
+# udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+# data = bytearray(DATA_MAX_SIZE)
+# data[0] = 72
+# data[1] = 69
+# udp_socket.sendto(generate_packet(packet_types[0], 0, 0, 4, data), (UDP_IP, UDP_PORT))
