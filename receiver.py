@@ -1,10 +1,6 @@
 import socket
 from constants import *
 
-# UDP_IP = "127.0.0.1"
-# UDP_PORT = 8080
-# DATA_MAX_SIZE = 5
-
 udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, DATA_MAX_SIZE)
 udp_socket.bind((UDP_IP, UDP_PORT))
@@ -16,5 +12,5 @@ def read_packet(packet):
     return result
 
 while True:
-    data, addr = udp_socket.recvfrom(DATA_MAX_SIZE+7)
+    data, addr = udp_socket.recvfrom(DATA_MAX_SIZE + 7)
     print ("Received: ", read_packet(data))
