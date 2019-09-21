@@ -1,5 +1,5 @@
 DATA_MAX_SIZE = 1024*32
-UDP_IP = "127.0.0.1"
+UDP_IP = "192.168.8.101"
 UDP_PORT = 8080
 
 packet_types = [

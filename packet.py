@@ -1,3 +1,4 @@
+import socket
 from constants import *
 
 def generate_checksum(packet):
@@ -80,7 +81,7 @@ def create_fin_ack(packet):
 
 def send_packet(packet, ip_address, port):
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    udp_socket.sendto(ack_packet, (ip_address, port))
+    udp_socket.sendto(packet, (ip_address, port))
 
 def print_packet_info(packet):
     print('Type: ', get_packet_type(packet))
