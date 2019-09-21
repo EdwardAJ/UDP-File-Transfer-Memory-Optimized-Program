@@ -37,4 +37,5 @@ def generate_packet():
     return packet
 
 udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, DATA_MAX_SIZE)
 udp_socket.sendto(generate_packet(), (UDP_IP, UDP_PORT))
