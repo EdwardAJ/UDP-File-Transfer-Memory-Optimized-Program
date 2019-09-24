@@ -9,6 +9,8 @@ RECEIVER_PORT = 8080
 
 DESTINATION_IP_ADDRESS = "localhost"
 
+MAX_MEMORY_SIZE = 1024 * 32 * 1024
+
 packet_types = [
     0, #DATA
     1, #ACK

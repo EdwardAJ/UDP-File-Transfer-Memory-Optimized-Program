@@ -65,6 +65,13 @@ def get_checksum(packet):
 def get_length(packet):
     return (int(packet[3]) << 8) + int(packet[4])
 
+def get_payload(packet):
+    payload = bytearray(get_length(packet))
+    for i in range(0, get_length(packet)):
+        payload[i] = packet[7 + i]
+    return payload
+
+
 def create_ack(packet):
     packet_id = get_packet_id(packet)
     sequence_id = get_sequence_id(packet)
