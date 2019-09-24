@@ -46,6 +46,7 @@ class ProgressBarHandler():
         print(string_to_print)
 
     def set_progress(self, id, progress):
+        print('Setting ' + str(id) + ' progress ' + str(progress))
         self.progresses[id] = progress
 
 
@@ -56,7 +57,6 @@ def is_still_sending():
         if (thread_status):
             return True
     
-    print('AAAA')
     return False
 
 def send_file_bytes_of_idx(id, filename, idx):
@@ -91,7 +91,8 @@ class FileSenderThread(threading.Thread):
             
             if self.is_ready_to_send:
                 i += 1
-            
+        
+        bar_drawer.set_progress(self.id, 1)
         send_packet(generate_packet(packet_types[2], self.id, 0, 0), DESTINATION_IP_ADDRESS, RECEIVER_PORT)
         
         self.destruction()
@@ -108,18 +109,18 @@ class AckReceiverThread(threading.Thread):
     def run(self):
         udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         udp_socket.bind((SENDER_ACK_SUBNET, SENDER_ACK_PORT))
-        while is_still_sending():
+        while True:
             packet, _ = udp_socket.recvfrom(DATA_MAX_SIZE + 7)
             self.handle_ack_packet(packet)
+            if (not is_still_sending()):
+                print('Exitting...')
+                break
 
     def handle_ack_packet(self, packet):
         if (get_packet_type(packet) == packet_types[1]):
             SENDING_THREADS['SenderThread %s' % get_packet_id(packet)].is_ready_to_send = True
         else:
-            print(get_packet_id(packet))
-            print(THREAD_IS_SENDING[get_packet_id(packet)])
             THREAD_IS_SENDING[get_packet_id(packet)] = False
-            print(THREAD_IS_SENDING[get_packet_id(packet)])
 
 
 def main():
@@ -136,7 +137,7 @@ def main():
         i += 1
 
     while (is_still_sending()):
-        # bar_drawer.drawBars()
+        bar_drawer.drawBars()
         
             
 

@@ -33,7 +33,7 @@ def create_merged_file (id):
     complete_name = os.path.join(complete_path, 'merged')
     
     file_list_array = get_file_list(id)
-    write_file(b'\x00', complete_name)
+    write_file(b'\x00', complete_name, 0)
     file_list_array.sort()
     f = open(complete_name, "wb")
     for file_name in file_list_array:
@@ -69,7 +69,7 @@ def receiver():
         packet, addr = udp_socket.recvfrom(DATA_MAX_SIZE + 7)
         if (is_checksum_valid(packet)):
             packet_payload = read_packet_data(packet)
-            write_directory(packet_payload, get_packet_id(packet))
+            write_directory(packet_payload, get_packet_id(packet), get_length(packet))
             if (is_fin(packet)):
                 send_packet(create_fin_ack(packet), addr[0], SENDER_ACK_PORT)
                 threading.Thread(target=create_merged_file, args=(get_packet_id(packet),)).start()
