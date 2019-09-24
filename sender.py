@@ -1,57 +1,79 @@
+import os
+import time
 import socket
-from packet import *
 import threading
+from math import floor
+from packet import *
 from constants import *
 
-def split_file (filename, id):
-    packets = []
-    i = 0
-    with open (filename, 'rb') as fin:
-        i = 0
-        buf = fin.read(DATA_MAX_SIZE)
-        i = 0
-        while (buf):
-            print('Bytes: ', len(buf))
-            data = bytearray(DATA_MAX_SIZE)
+SENDING_THREADS = {}
 
-            for j in range(0, len(buf) - 1 + 1):
-                data[j] = buf[j]
-            
-            packets.append(generate_packet(packet_types[1], id, i, len(buf), data))
-            buf = fin.read(DATA_MAX_SIZE)
-            i += 1
+def send_file_bytes_of_idx(id, filename, idx):
+    with open (filename, 'rb') as file:
+        file.seek(DATA_MAX_SIZE * idx, 0)
+        file_buffer = file.read(min(DATA_MAX_SIZE, (os.stat(filename).st_size - (DATA_MAX_SIZE * idx))))
+        send_packet(generate_packet(packet_types[1], id, idx, len(file_buffer), file_buffer), DESTINATION_IP_ADDRESS, RECEIVER_PORT)
 
-        print ('Count: ', i)
-    return packets
+class FileSenderThread(threading.Thread):
+    id = None
+    filename = None
+    is_ready_to_send = True
 
-# aas = split_file('edward 3x4 hitam putih.jpg', 1)
-# for aa in aas:
-#     print(aa[0:8])
-
-class MyThread():
-    # ini copas dari https://www.tutorialspoint.com/python/python_multithreading.htm
-    def __init__(self, threadID, name, counter):
+    def __init__(self, id, filename):
         threading.Thread.__init__(self)
-        self.threadID = threadID
-        self.name = name
-        self.counter = counter
+        self.id = id
+        self.filename = filename
 
-    def run(self,idFile,filename):
-        threadLock.acquire()
-        packets = split_file(filename,idFile)
-        for packet in packets:
-            print('Sending...')
-            send_packet(packet, UDP_IP, UDP_PORT)
-        # test print nomor thread
-        print(file_number+1)
-        threadLock.release()
+    def run(self):
+        i = 0
+        while i <= floor(os.stat(self.filename).st_size / DATA_MAX_SIZE):
+            send_file_bytes_of_idx(self.id, self.filename, i)
+            self.is_ready_to_send = False
+            time.sleep(SENDER_ACK_TIME_LIMIT)
+            if self.is_ready_to_send:
+                i += 1
+        send_packet(generate_packet(packet_types[2], self.id, 0, 0), DESTINATION_IP_ADDRESS, RECEIVER_PORT)
+        self.destruction()
 
-threadLock = threading.Lock()
+    def destruction(self):
+        del SENDING_THREADS['SenderThread %s' % self.id]
 
-file_number = 0
-while True:
-    input_name = input()
-    if (input_name != ''):
-        globals()['thread%s' % (file_number+1)] = MyThread(file_number, "Thread-"+str(file_number+1), file_number)
-        globals()['thread%s' % (file_number+1)].run(file_number,input_name)
-        file_number += 1
+
+
+class AckReceiverThread(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+        print('Starting AckReceiver...')
+
+    def run(self):
+        udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        udp_socket.bind((SENDER_ACK_SUBNET, SENDER_ACK_PORT))
+        while True:
+            packet, addr = udp_socket.recvfrom(DATA_MAX_SIZE + 7)
+            self.handle_ack_packet(packet)
+
+    def handle_ack_packet(self, packet):
+        if (get_packet_type(packet) == packet_types[1]):
+            SENDING_THREADS['SenderThread %s' % get_packet_id(packet)].is_ready_to_send = True
+
+def main():
+    receiver_thread = AckReceiverThread()
+    receiver_thread.start()
+
+    while True:
+        filename = input('Filename: ')
+        if (filename != 'quit'):
+            i = 0
+            while i < 16:
+                if 'SenderThread %s' % i in SENDING_THREADS:
+                    i += 1
+                else:
+                    break
+            
+            print('Sending file ' + filename + '...')
+            SENDING_THREADS['SenderThread %s' % i] = FileSenderThread(i, filename)
+            SENDING_THREADS['SenderThread %s' % i].start()
+        else:
+            break
+
+main()

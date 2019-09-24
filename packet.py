@@ -34,7 +34,7 @@ def generate_packet(packet_type, id, sequence, length, data = None):
     packet[4] = length & 255
     
     #Data
-    for i in range(0, DATA_MAX_SIZE - 1 + 1):
+    for i in range(0, len(data)):
         packet[7 + i] = data[i]
 
     #Checksum
@@ -69,19 +69,17 @@ def create_ack(packet):
     packet_id = get_packet_id(packet)
     sequence_id = get_sequence_id(packet)
     ack_packet = generate_packet(packet_types[1], packet_id, sequence_id, 0)
-    print_packet_info(ack_packet)
     return ack_packet
 
 def create_fin_ack(packet):
     packet_id = get_packet_id(packet)
     sequence_id = get_sequence_id(packet)
     ack_packet = generate_packet(packet_types[3], packet_id, sequence_id, 0)
-    print_packet_info(ack_packet)
     return ack_packet
 
 def send_packet(packet, ip_address, port):
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    udp_socket.sendto(packet, (ip_address, port))
+    return udp_socket.sendto(packet, (ip_address, port))
 
 def print_packet_info(packet):
     print('Type: ', get_packet_type(packet))
