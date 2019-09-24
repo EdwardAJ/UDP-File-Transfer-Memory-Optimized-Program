@@ -5,10 +5,11 @@ import time
 import threading
 from constants import *
 
-jumlahPart = 0
+jumlahPart = 0 #ini buat progress bar
 
 def split_file (filename, id):
-    global jumlahPart
+    global jumlahPart #ini buat progress bar
+
     packets = []
     i = 0
     with open (filename, 'rb') as fin:
@@ -54,6 +55,8 @@ class MyThread():
 
 threadLock = threading.Lock()
 
+
+# INI KE BAWAH COPAS DARI http://code.activestate.com/recipes/577871-python-progressbar/
 
 class ProgressBar(object):
     """ProgressBar class holds the options of the progress bar.
@@ -140,4 +143,3 @@ if __name__ == '__main__':
                 if p.progress == 100:
                     break
             print()
-            
