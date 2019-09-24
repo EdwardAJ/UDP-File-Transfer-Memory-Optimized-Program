@@ -41,12 +41,15 @@ def create_merged_file (id):
         f.write(buf)
         f.seek(0,2)
 
-def write_file(data, filename):
+def write_file(data, filename, length):
     with open(filename, "wb") as binary_file:
         # Write text or bytes to the file
-        num_bytes_written = binary_file.write(data)
+        data_to_write = bytearray(length)
+        for i in range(0, length):
+                data_to_write[i] = data[i]
+        num_bytes_written = binary_file.write(data_to_write)
 
-def write_directory (data, id):
+def write_directory (data, id, length):
     my_path = os.path.abspath(os.path.dirname(__file__))
     # Check if directory exists
     if (not os.path.exists(str(id))):
@@ -57,7 +60,7 @@ def write_directory (data, id):
     while os.path.exists(complete_name):
         file_name_int = file_name_int + 1
         complete_name = os.path.join(complete_path, str(file_name_int))
-    write_file(data, complete_name)
+    write_file(data, complete_name, length)
 
 def receiver():
     print("Receiving on " + str(RECEIVER_SUBNET) + ":" + str(RECEIVER_PORT))
