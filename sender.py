@@ -10,6 +10,7 @@ from constants import *
 
 SENDING_THREADS = {}
 THREAD_IS_SENDING = []
+sender_memory_dict = {}
 
 class ProgressBarHandler():
     progress_name = []
@@ -56,14 +57,46 @@ def is_still_sending():
     for thread_status in THREAD_IS_SENDING:
         if (thread_status):
             return True
-    
     return False
 
-def send_file_bytes_of_idx(id, filename, idx):
+def read_file (id, filename):
     with open (filename, 'rb') as file:
-        file.seek(DATA_MAX_SIZE * idx, 0)
-        file_buffer = file.read(min(DATA_MAX_SIZE, (os.stat(filename).st_size - (DATA_MAX_SIZE * idx))))
-        send_packet(generate_packet(packet_types[1], id, idx + 1, len(file_buffer), file_buffer), DESTINATION_IP_ADDRESS, RECEIVER_PORT)
+        # Counter to keep track how much memory has been added.
+        current_memory_size = 0
+        # While file is not closed yet:
+        while (current_memory_size < os.stat(filename).st_size):
+            memory_size_per_pass = min(MAX_MEMORY_SIZE, os.stat(filename).st_size - current_memory_size)
+            file.seek(current_memory_size, 0)
+            file_buffer = file.read(memory_size_per_pass)
+            send_file_buffer_to_receiver(id, filename, file_buffer)
+            current_memory_size += memory_size_per_pass
+
+def send_file_buffer_to_receiver (id, filename, file_buffer):
+    file_buffer_size = len(file_buffer)
+    current_size = 0
+    packet_idx = 0
+    curr_idx = 0
+    while (current_size < file_buffer_size):
+        packet_data_size = min(file_buffer_size - current_size, DATA_MAX_SIZE)
+        packet = bytearray(packet_data_size)
+        i = 0
+        while (i < packet_data_size):
+            packet[i] = file_buffer[curr_idx + i]
+            i += 1
+        curr_idx += i
+        # Insert to sender memory!  
+        insert_to_sender_memory(id, packet)
+        packet_idx += 1
+        current_size += packet_data_size
+
+def insert_to_sender_memory(id, packet):
+    try:
+        sender_memory_dict[id].append(packet)
+    except KeyError:
+        sender_memory_dict[id] = [packet]
+
+def send_file_bytes_of_idx(id, filename, idx, file_buffer):
+    send_packet(generate_packet(packet_types[1], id, idx + 1, len(file_buffer), file_buffer), DESTINATION_IP_ADDRESS, RECEIVER_PORT)
 
 def get_packet_amount(filename):
     return ceil(os.stat(filename).st_size/DATA_MAX_SIZE)
@@ -90,8 +123,10 @@ class FileSenderThread(threading.Thread):
         
         i = 0
         
+        read_file(self.id, self.filename)
+        self.packet_count = len(sender_memory_dict[self.id])
         while i < self.packet_count:
-            send_file_bytes_of_idx(self.id, self.filename, i)
+            send_file_bytes_of_idx(self.id, self.filename, i, sender_memory_dict[self.id][i])
             self.is_ready_to_send = False
             time.sleep(SENDER_ACK_TIME_LIMIT)
             bar_drawer.set_progress(self.id, i / self.packet_count)
@@ -105,6 +140,7 @@ class FileSenderThread(threading.Thread):
         self.destruction()
 
     def destruction(self):
+        sender_memory_dict[self.id].clear()
         del SENDING_THREADS['SenderThread %s' % self.id]
 
 
@@ -146,7 +182,6 @@ def main():
     while (is_still_sending()):
         # bar_drawer.drawBars()
         pass
-        
-            
+
 
 main()
