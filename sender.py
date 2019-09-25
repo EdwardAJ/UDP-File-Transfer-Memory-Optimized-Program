@@ -63,7 +63,7 @@ def send_file_bytes_of_idx(id, filename, idx):
     with open (filename, 'rb') as file:
         file.seek(DATA_MAX_SIZE * idx, 0)
         file_buffer = file.read(min(DATA_MAX_SIZE, (os.stat(filename).st_size - (DATA_MAX_SIZE * idx))))
-        send_packet(generate_packet(packet_types[1], id, idx, len(file_buffer), file_buffer), DESTINATION_IP_ADDRESS, RECEIVER_PORT)
+        send_packet(generate_packet(packet_types[1], id, idx + 1, len(file_buffer), file_buffer), DESTINATION_IP_ADDRESS, RECEIVER_PORT)
 
 def get_packet_amount(filename):
     return ceil(os.stat(filename).st_size/DATA_MAX_SIZE)
@@ -81,6 +81,13 @@ class FileSenderThread(threading.Thread):
         self.packet_count = get_packet_amount(self.filename)
 
     def run(self):
+        introduce_packet = create_introduce_packet(self.packet_count, self.filename, self.id)
+        send_packet(introduce_packet, DESTINATION_IP_ADDRESS, RECEIVER_PORT)
+        self.is_ready_to_send = False
+
+        while not self.is_ready_to_send:
+            send_packet(introduce_packet, DESTINATION_IP_ADDRESS, RECEIVER_PORT)
+        
         i = 0
         
         while i < self.packet_count:
@@ -137,7 +144,8 @@ def main():
         i += 1
 
     while (is_still_sending()):
-        bar_drawer.drawBars()
+        # bar_drawer.drawBars()
+        pass
         
             
 

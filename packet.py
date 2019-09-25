@@ -84,6 +84,17 @@ def create_fin_ack(packet):
     ack_packet = generate_packet(packet_types[3], packet_id, sequence_id, 0)
     return ack_packet
 
+def create_introduce_packet(packet_count, filename, id):
+    payload = bytearray(2 + len(filename))
+
+    payload[0] = (packet_count >> 8) & (2**8 - 1)
+    payload[1] = packet_count & (2**8 - 1)
+
+    for i in range(0, len(filename)):
+        payload[i + 2] = ord(filename[i])
+    
+    return generate_packet(packet_types[0], id, 0, 2 + len(filename), payload)
+
 def send_packet(packet, ip_address, port):
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     return udp_socket.sendto(packet, (ip_address, port))
