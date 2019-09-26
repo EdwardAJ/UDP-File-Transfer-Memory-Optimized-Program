@@ -1,8 +1,10 @@
 import os
 import socket
+import platform
 import threading
 from packet import *
 from constants import *
+from math import floor, ceil
 from os import listdir
 from os.path import isfile, join
 
@@ -10,9 +12,52 @@ udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 udp_socket.bind((RECEIVER_SUBNET, RECEIVER_PORT))
 
 current_memory = 0
+bar_handler = None
 
 memory_dict = {}
 filename_dict = {}
+
+class ProgressBarHandler():
+    bar_length = None
+
+    progress_name = []
+    progresses = []
+
+    def __init__(self, bar_length = 10):
+        self.bar_length = bar_length
+
+    def add_progress(self, progress_name):
+        self.progress_name.append(progress_name)
+        self.progresses.append(0.0)
+
+    def drawBars(self):
+        if (platform.system() == 'Linux' or platform.system() == 'Darwin'):
+            os.system('clear')
+        elif (platform.system() == 'Windows'):
+            os.system('cls')
+
+        for i in range(0, len(self.progress_name)):
+            self.drawBar(i)
+
+    def drawBar(self, id):
+        string_to_print = self.progress_name[id]
+        string_to_print += ': ['
+
+        i = 0
+        while i < floor(self.progresses[id] * self.bar_length):
+            string_to_print += '='
+            i += 1
+
+        while i < self.bar_length:
+            string_to_print += '-'
+            i += 1
+
+        string_to_print += ']'
+
+        print(string_to_print)
+
+    def set_progress(self, id, progress):
+        self.progresses[id] = progress
 
 def read_packet_data(packet):
     result = bytearray(DATA_MAX_SIZE)
@@ -52,6 +97,7 @@ def free_memory():
         memory_dict[key].clear()
 
 def receiver():
+    global bar_handler
     global current_memory
     RECEIVER_PORT = input('Port to bind: ')
 
@@ -60,15 +106,17 @@ def receiver():
     
     print("Receiving on " + str(RECEIVER_SUBNET) + ":" + str(RECEIVER_PORT))
     i = 0
+
+    bar_handler = ProgressBarHandler(20)
     while True:
         packet, addr = udp_socket.recvfrom(DATA_MAX_SIZE + 7)
         if (is_checksum_valid(packet)):
             packet_payload = read_packet_data(packet)
             if (is_fin(packet)):
                 send_packet(create_fin_ack(packet), addr[0], SENDER_ACK_PORT)
+                filename_dict[get_dictkey(packet, addr[0])][2] = filename_dict[get_dictkey(packet, addr[0])][1]
                 dump_memory_to_file()
                 free_memory()
-                del filename_dict[get_dictkey(packet, addr[0])]
                 current_memory = 0
             elif (get_sequence_id(packet) == 0):
                 send_packet(create_ack(packet), addr[0], SENDER_ACK_PORT)
@@ -87,13 +135,17 @@ def receiver():
                     name_i += 1
                     filename = received_filename + '(' + str(name_i) + ')'
                 
-                filename_dict[get_dictkey(packet, addr[0])] = [packet_count, filename]
+                filename_dict[get_dictkey(packet, addr[0])] = [packet_count, filename, 0]
+                bar_handler.add_progress(filename)
             else:
                 send_packet(create_ack(packet), addr[0], SENDER_ACK_PORT)
+                filename_dict[get_dictkey(packet, addr[0])][2] += 1
+                bar_handler.set_progress(bar_handler.progress_name.index(get_filename(get_dictkey(packet, addr[0]))), filename_dict[get_dictkey(packet, addr[0])][2] / filename_dict[get_dictkey(packet, addr[0])][0])
                 insert_to_memory(packet, addr[0])
                 if current_memory >= MAX_MEMORY_SIZE - (DATA_MAX_SIZE + 7):
                     dump_memory_to_file()
                     free_memory()
                     current_memory = 0
+            bar_handler.drawBars()
 
 receiver()

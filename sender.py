@@ -1,4 +1,3 @@
-import re
 import os
 import sys
 import time
@@ -122,9 +121,13 @@ class FileSenderThread(threading.Thread):
         introduce_packet = create_introduce_packet(self.packet_count, clear_filename(self.filename), self.id)
         send_packet(introduce_packet, DESTINATION_IP_ADDRESS, RECEIVER_PORT)
         self.is_ready_to_send = False
+        self.timeout_event = threading.Event()
+        self.timeout_event.wait(SENDER_ACK_TIME_LIMIT)
 
         while not self.is_ready_to_send:
             send_packet(introduce_packet, DESTINATION_IP_ADDRESS, RECEIVER_PORT)
+            self.timeout_event = threading.Event()
+            self.timeout_event.wait(SENDER_ACK_TIME_LIMIT)
         
         i = 0
         
