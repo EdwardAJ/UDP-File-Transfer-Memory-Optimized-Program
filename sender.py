@@ -35,7 +35,7 @@ class ProgressBarHandler():
             self.drawBar(i)
 
     def drawBar(self, id):
-        string_to_print = self.progress_name[id]
+        string_to_print = self.progress_name[id][:11] + '... ' if len(self.progress_name[id]) > 10 else self.progress_name[id] + ' '
         string_to_print += ': ['
 
         i = 0
