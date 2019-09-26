@@ -1,3 +1,4 @@
+import re
 import os
 import sys
 import time
@@ -13,8 +14,13 @@ THREAD_IS_SENDING = []
 sender_memory_dict = {}
 
 class ProgressBarHandler():
+    bar_length = None
+
     progress_name = []
     progresses = []
+
+    def __init__(self, bar_length = 10):
+        self.bar_length = bar_length
 
     def add_progress(self, progress_name):
         self.progress_name.append(progress_name)
@@ -34,11 +40,11 @@ class ProgressBarHandler():
         string_to_print += ': ['
 
         i = 0
-        while i < floor(self.progresses[id] * 10):
+        while i < floor(self.progresses[id] * self.bar_length):
             string_to_print += '='
             i += 1
 
-        while i < 10:
+        while i < self.bar_length:
             string_to_print += '-'
             i += 1
 
@@ -49,8 +55,7 @@ class ProgressBarHandler():
     def set_progress(self, id, progress):
         self.progresses[id] = progress
 
-
-bar_drawer = ProgressBarHandler()
+bar_drawer = ProgressBarHandler(25)
 
 def is_still_sending():
     for thread_status in THREAD_IS_SENDING:
@@ -114,7 +119,7 @@ class FileSenderThread(threading.Thread):
         self.packet_count = get_packet_amount(self.filename)
 
     def run(self):
-        introduce_packet = create_introduce_packet(self.packet_count, self.filename, self.id)
+        introduce_packet = create_introduce_packet(self.packet_count, clear_filename(self.filename), self.id)
         send_packet(introduce_packet, DESTINATION_IP_ADDRESS, RECEIVER_PORT)
         self.is_ready_to_send = False
 
@@ -156,20 +161,66 @@ class AckReceiverThread(threading.Thread):
         while True:
             packet, _ = udp_socket.recvfrom(DATA_MAX_SIZE + 7)
             self.handle_ack_packet(packet)
-            if (not is_still_sending()):
-                print('Exitting...')
+            if not is_still_sending():
+                print('Exiting...')
                 break
 
     def handle_ack_packet(self, packet):
         if (get_packet_type(packet) == packet_types[1]):
             SENDING_THREADS['SenderThread %s' % get_packet_id(packet)].is_ready_to_send = True
-            if (not SENDING_THREADS['SenderThread %s' % get_packet_id(packet)].timeout_event == None):
+            if (SENDING_THREADS['SenderThread %s' % get_packet_id(packet)].timeout_event != None):
                 SENDING_THREADS['SenderThread %s' % get_packet_id(packet)].timeout_event.set()
         else:
+            print('FINACK')
             THREAD_IS_SENDING[get_packet_id(packet)] = False
 
 
+def is_destination_address_valid(destination_address):
+    destination_address = destination_address.split(':')
+
+    if len(destination_address) != 2:
+        return False
+    
+    try:
+        destination_address[1] = int(destination_address[1])
+    except:
+        return False
+    
+    if not (destination_address[1] >= 0 and destination_address[1] <= 65535):
+        return False
+
+    if destination_address[0] == 'localhost':
+        return True
+
+    try:
+        socket.inet_aton(destination_address[0])
+    except:
+        return False
+    
+    return True
+
+def clear_filename(filename):
+    return filename.split(os.path.sep)[-1]
+
 def main():
+    if len(sys.argv[1:]) == 0:
+        print('Please input file names when running!')
+        return
+
+    for filename in sys.argv[1:]:
+        if not os.path.exists(filename):
+            print('File ' + filename + ' not found!')
+            return
+
+    destination_address = input('Destination address: ')
+    if not is_destination_address_valid(destination_address):
+        print('Please input valid destination address! Example: 192.168.0.1:8080')
+        return
+    
+    destination_address = destination_address.split(':')
+    DESTINATION_IP_ADDRESS = destination_address[0]
+    RECEIVER_PORT = destination_address[1]
+
     receiver_thread = AckReceiverThread()
     receiver_thread.start()
 
@@ -178,7 +229,7 @@ def main():
         THREAD_IS_SENDING.append(True)
         SENDING_THREADS['SenderThread %s' % i] = FileSenderThread(i, filename)
         SENDING_THREADS['SenderThread %s' % i].start()
-        bar_drawer.add_progress(filename)
+        bar_drawer.add_progress(clear_filename(filename))
         i += 1
 
     while (is_still_sending()):
