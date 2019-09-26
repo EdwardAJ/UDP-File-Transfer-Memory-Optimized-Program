@@ -47,7 +47,6 @@ class ProgressBarHandler():
         print(string_to_print)
 
     def set_progress(self, id, progress):
-        print('Setting ' + str(id) + ' progress ' + str(progress))
         self.progresses[id] = progress
 
 
@@ -106,6 +105,7 @@ class FileSenderThread(threading.Thread):
     filename = None
     is_ready_to_send = True
     packet_count = 0
+    timeout_event = None
     
     def __init__(self, id, filename):
         threading.Thread.__init__(self)
@@ -128,7 +128,8 @@ class FileSenderThread(threading.Thread):
         while i < self.packet_count:
             send_file_bytes_of_idx(self.id, self.filename, i, sender_memory_dict[self.id][i])
             self.is_ready_to_send = False
-            time.sleep(SENDER_ACK_TIME_LIMIT)
+            self.timeout_event = threading.Event()
+            self.timeout_event.wait(SENDER_ACK_TIME_LIMIT)
             bar_drawer.set_progress(self.id, i / self.packet_count)
             
             if self.is_ready_to_send:
@@ -162,6 +163,8 @@ class AckReceiverThread(threading.Thread):
     def handle_ack_packet(self, packet):
         if (get_packet_type(packet) == packet_types[1]):
             SENDING_THREADS['SenderThread %s' % get_packet_id(packet)].is_ready_to_send = True
+            if (not SENDING_THREADS['SenderThread %s' % get_packet_id(packet)].timeout_event == None):
+                SENDING_THREADS['SenderThread %s' % get_packet_id(packet)].timeout_event.set()
         else:
             THREAD_IS_SENDING[get_packet_id(packet)] = False
 
@@ -172,7 +175,6 @@ def main():
 
     i = 0
     for filename in sys.argv[1:]:
-        print('Sending file ' + filename + '...')
         THREAD_IS_SENDING.append(True)
         SENDING_THREADS['SenderThread %s' % i] = FileSenderThread(i, filename)
         SENDING_THREADS['SenderThread %s' % i].start()
@@ -180,8 +182,7 @@ def main():
         i += 1
 
     while (is_still_sending()):
-        # bar_drawer.drawBars()
-        pass
+        bar_drawer.drawBars()
 
 
 main()
